@@ -11,6 +11,10 @@ documentation = "https://kilroybot.github.io/kilroy-server-py-utils"
 
 [tool.poetry.dependencies]
 python = "^3.9"
+pydantic = "^1.9"
+pyhumps = "^3.7"
+jsonschema = "^4.7"
+fifolock = "^0.0"
 
 # dev
 
