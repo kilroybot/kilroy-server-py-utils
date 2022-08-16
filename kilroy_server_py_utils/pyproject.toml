@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kilroy-server-py-utils"
-version = "0.1.0"
+version = "0.2.0"
 description = "utilities for kilroy servers 🔧"
 readme = "README.md"
 authors = ["kilroy <kilroymail@pm.me>"]
@@ -11,6 +11,10 @@ documentation = "https://kilroybot.github.io/kilroy-server-py-utils"
 
 [tool.poetry.dependencies]
 python = "^3.9"
+pydantic = "^1.9"
+pyhumps = "^3.7"
+jsonschema = "^4.7"
+fifolock = "^0.0"
 
 # dev
 
