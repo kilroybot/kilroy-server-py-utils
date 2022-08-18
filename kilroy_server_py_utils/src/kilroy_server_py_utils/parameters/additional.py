@@ -69,7 +69,8 @@ class CategorizableBasedParameter(
     async def _set(
         self, state: StateType, value: Dict[str, Any]
     ) -> Callable[[], Awaitable]:
-        category = value["type"]
+        current = await self._get_categorizable(state)
+        category = value.get("type", current.category)
 
         current = await self._get_categorizable(state)
         if current.category == category:
@@ -79,7 +80,7 @@ class CategorizableBasedParameter(
                 async def undo():
                     await current.config.set(original_value)
 
-                await current.config.set(value["config"])
+                await current.config.set(value.get("config", {}))
                 return undo
 
             return noop
