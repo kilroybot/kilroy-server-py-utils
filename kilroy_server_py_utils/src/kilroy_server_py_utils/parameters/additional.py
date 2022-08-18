@@ -87,7 +87,7 @@ class CategorizableBasedParameter(
 
         params = await self._get_params(state, category)
         cls = self.categorizable_base_class.for_category(category)
-        if issubclass(cls, (Categorizable, Configurable)):
+        if issubclass(cls, Configurable):
             instance = await cls.build(**params)
             await instance.init()
             original_config = await instance.config.json.get()
@@ -97,6 +97,7 @@ class CategorizableBasedParameter(
                 await self._set_categorizable(state, current)
 
             await instance.config.set(value.get("config", {}))
+            # noinspection PyTypeChecker
             await self._set_categorizable(state, instance)
 
             return undo
