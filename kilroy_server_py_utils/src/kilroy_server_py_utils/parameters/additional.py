@@ -85,6 +85,9 @@ class CategorizableBasedParameter(
 
             return noop
 
+        if isinstance(current, Configurable):
+            await current.cleanup()
+
         params = await self._get_params(state, category)
         cls = self.categorizable_base_class.for_category(category)
         if issubclass(cls, Configurable):

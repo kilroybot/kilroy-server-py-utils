@@ -125,6 +125,9 @@ class Configurable(Generic[StateType]):
         state = await self.build_default_state()
         await self._config.init(state)
 
+    async def cleanup(self) -> None:
+        pass
+
     @classproperty
     def parameters(cls) -> Set[Parameter]:
         return {
