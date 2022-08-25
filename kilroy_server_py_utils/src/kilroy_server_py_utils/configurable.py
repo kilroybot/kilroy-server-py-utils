@@ -1,5 +1,16 @@
 import inspect
-from typing import Any, Dict, Generic, Set, Type, TypeVar
+from contextlib import asynccontextmanager
+from typing import (
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    Set,
+    Type,
+    TypeVar,
+)
 
 from kilroy_server_py_utils.loadable import Loadable
 from kilroy_server_py_utils.observable import (
@@ -58,9 +69,12 @@ class Configuration(Generic[StateType]):
             for parameter in self._parameters
         }
 
-    async def init(self, state: StateType) -> None:
+    @asynccontextmanager
+    async def load(
+        self,
+    ) -> AsyncIterator[Callable[[StateType], Awaitable[None]]]:
         async with self._state.load() as (_, setter):
-            await setter(state)
+            yield setter
         await self._json.set(await self._build_json())
 
     async def set(self, config: Dict[str, Any]) -> Dict[str, Any]:
@@ -122,8 +136,9 @@ class Configurable(Generic[StateType]):
         return get_generic_args(self, Configurable)[0](**self._kwargs)
 
     async def init(self) -> None:
-        state = await self.build_default_state()
-        await self._config.init(state)
+        async with self._config.load() as setter:
+            state = await self.build_default_state()
+            await setter(state)
 
     async def cleanup(self) -> None:
         pass
