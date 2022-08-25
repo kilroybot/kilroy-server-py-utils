@@ -2,6 +2,7 @@ from asyncio import Event
 from contextlib import asynccontextmanager
 from typing import (
     AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
     Generic,
@@ -101,19 +102,21 @@ class Loadable(Generic[T]):
         return ReadOnlyObservableWrapper(self._ready)
 
     @asynccontextmanager
-    async def read_lock(self) -> T:
+    async def read_lock(self) -> AsyncIterator[T]:
         async with self._lock(Read):
             yield await self._value.fetch()
 
     @asynccontextmanager
-    async def write_lock(self) -> T:
+    async def write_lock(self) -> AsyncIterator[T]:
         async with self._lock(Write):
             yield await self._value.fetch()
 
     @asynccontextmanager
     async def load(
         self,
-    ) -> Tuple[Callable[[], Awaitable[T]], Callable[[], Awaitable[None]]]:
+    ) -> AsyncIterator[
+        Tuple[Callable[[], Awaitable[T]], Callable[[T], Awaitable[None]]]
+    ]:
         async with self._lock(Write):
             self._event.clear()
             ready = await self._ready.get()

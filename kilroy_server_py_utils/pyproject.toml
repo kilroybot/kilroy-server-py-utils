@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kilroy-server-py-utils"
-version = "0.1.3"
+version = "0.1.4"
 description = "utilities for kilroy servers 🔧"
 readme = "README.md"
 authors = ["kilroy <kilroymail@pm.me>"]
