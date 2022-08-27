@@ -9,7 +9,6 @@ from kilroy_server_py_utils.parameters.base import Parameter
 from kilroy_server_py_utils.utils import classproperty, get_generic_args, noop
 
 StateType = TypeVar("StateType")
-ParameterType = TypeVar("ParameterType")
 ConfigurableType = TypeVar("ConfigurableType", bound=Configurable)
 CategorizableType = TypeVar("CategorizableType", bound=Categorizable)
 
