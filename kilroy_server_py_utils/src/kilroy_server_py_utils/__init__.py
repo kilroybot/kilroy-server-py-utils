@@ -37,3 +37,4 @@ from kilroy_server_py_utils.utils import (
     noop,
     normalize,
 )
+from kilroy_server_py_utils.savable import Savable
