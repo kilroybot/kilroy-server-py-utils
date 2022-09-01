@@ -134,7 +134,7 @@ class Configurable(Savable, Generic[StateType]):
         return self._config.state
 
     @classmethod
-    async def build_configurable(
+    async def _build_configurable(
         cls, configurable: Type[ConfigurableType], **kwargs
     ) -> ConfigurableType:
         instance = await configurable.build(**kwargs)
@@ -142,47 +142,47 @@ class Configurable(Savable, Generic[StateType]):
         return instance
 
     @classmethod
-    async def build_categorizable(
+    async def _build_categorizable(
         cls, categorizable: Type[CategorizableType], category: str, **kwargs
     ) -> CategorizableType:
         subclass = categorizable.for_category(category)
         if issubclass(subclass, Configurable):
             # noinspection PyTypeChecker
-            return await cls.build_configurable(subclass, **kwargs)
+            return await cls._build_configurable(subclass, **kwargs)
         return subclass(**kwargs)
 
     @classmethod
-    async def build_generic(cls, type_: Type[T], **kwargs) -> T:
+    async def _build_generic(cls, type_: Type[T], **kwargs) -> T:
         if issubclass(type_, Categorizable):
-            return await cls.build_categorizable(type_, **kwargs)
+            return await cls._build_categorizable(type_, **kwargs)
         if issubclass(type_, Configurable):
-            return await cls.build_configurable(type_, **kwargs)
+            return await cls._build_configurable(type_, **kwargs)
         return type_(**kwargs)
 
     @classproperty
-    def state_class(cls) -> Type[StateType]:
+    def _state_class(cls) -> Type[StateType]:
         return get_generic_args(cls, Configurable)[0]
 
-    async def build_default_state(self) -> StateType:
-        return self.state_class(**self._kwargs)
+    async def _build_default_state(self) -> StateType:
+        return self._state_class(**self._kwargs)
 
     async def init(self) -> None:
         async with self._config.load() as setter:
-            state = await self.build_default_state()
+            state = await self._build_default_state()
             await setter(state)
 
     async def cleanup(self) -> None:
         pass
 
     @classmethod
-    async def save_state(cls, state: StateType, directory: Path) -> None:
+    async def _save_state(cls, state: StateType, directory: Path) -> None:
         with open(directory / "state.json", "w") as f:
             json.dump(vars(state), f)
 
     async def save(self, directory: Path) -> None:
         directory.mkdir(parents=True, exist_ok=True)
         async with self.state.read_lock() as state:
-            await self.save_state(state, directory)
+            await self._save_state(state, directory)
 
     @classmethod
     async def from_saved(
@@ -193,13 +193,13 @@ class Configurable(Savable, Generic[StateType]):
         return instance
 
     @classmethod
-    async def load_savable(
+    async def _load_savable(
         cls, directory: Path, savable: Type[SavableType]
     ) -> SavableType:
         return await savable.from_saved(directory)
 
     @classmethod
-    async def load_categorizable(
+    async def _load_categorizable(
         cls,
         directory: Path,
         categorizable: Type[CategorizableType],
@@ -210,10 +210,12 @@ class Configurable(Savable, Generic[StateType]):
         if issubclass(subclass, Savable):
             # noinspection PyTypeChecker
             return await subclass.from_saved(directory, **kwargs)
-        return await cls.build_categorizable(categorizable, category, **kwargs)
+        return await cls._build_categorizable(
+            categorizable, category, **kwargs
+        )
 
     @classmethod
-    async def load_generic(
+    async def _load_generic(
         cls,
         directory: Path,
         type_: Type[T],
@@ -235,14 +237,14 @@ class Configurable(Savable, Generic[StateType]):
 
         return await cls._build_generic(type_, **kwargs)
 
-    async def load_saved_state(self, directory: Path) -> StateType:
+    async def _load_saved_state(self, directory: Path) -> StateType:
         with open(directory / "state.json", "r") as f:
             state_dict = json.load(f)
-        return self.state_class(**state_dict)
+        return self._state_class(**state_dict)
 
     async def load_saved(self, directory: Path) -> None:
         async with self._config.load() as setter:
-            state = await self.load_saved_state(directory)
+            state = await self._load_saved_state(directory)
             await setter(state)
 
     @classproperty
