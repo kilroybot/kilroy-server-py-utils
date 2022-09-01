@@ -125,6 +125,14 @@ class Configurable(Savable, Generic[StateType]):
     async def build(cls: Type[ConfigurableType], **kwargs) -> ConfigurableType:
         return cls(config=await Configuration.build(cls.parameters), **kwargs)
 
+    @classmethod
+    async def create(
+        cls: Type[ConfigurableType], **kwargs
+    ) -> ConfigurableType:
+        instance = await cls.build(**kwargs)
+        await instance.init()
+        return instance
+
     @property
     def config(self) -> Configuration[StateType]:
         return self._config
