@@ -1,8 +1,11 @@
 import inspect
+import weakref
 from asyncio import AbstractEventLoop, get_running_loop
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from concurrent.futures import Executor
 from functools import partial
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import (
     Callable,
     Optional,
@@ -36,6 +39,19 @@ def can_call_with_arg(f: Callable, arg_name: str) -> bool:
         return False
 
     return True
+
+
+class SelfDeletingDirectory:
+    def __init__(self, *args, **kwargs):
+        self._tempdir = TemporaryDirectory(*args, **kwargs)
+        weakref.finalize(self, self.cleanup)
+
+    @property
+    def path(self) -> Path:
+        return Path(self._tempdir.name)
+
+    def cleanup(self):
+        self._tempdir.cleanup()
 
 
 class classproperty:
