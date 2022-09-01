@@ -9,6 +9,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    List,
     Set,
     Type,
     TypeVar,
@@ -248,8 +249,17 @@ class Configurable(Savable, Generic[StateType]):
         return JSONSchema(
             title=cls.schema_name,
             type="object",
+            required=cls.required_properties,
             properties=cls.properties_schema,
         )
+
+    @classproperty
+    def required_properties(cls) -> List[str]:
+        return [
+            parameter.name
+            for parameter in cls.parameters
+            if parameter.required
+        ]
 
     @classproperty
     def properties_schema(cls) -> Dict[str, Any]:
