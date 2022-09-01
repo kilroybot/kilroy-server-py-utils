@@ -10,6 +10,7 @@ from typing import (
     Dict,
     Generic,
     List,
+    Optional,
     Set,
     Type,
     TypeVar,
@@ -213,13 +214,26 @@ class Configurable(Savable, Generic[StateType]):
 
     @classmethod
     async def load_generic(
-        cls, directory: Path, type_: Type[T], **kwargs
+        cls,
+        directory: Path,
+        type_: Type[T],
+        default: Optional[Callable[[], Awaitable[T]]] = None,
+        **kwargs,
     ) -> T:
-        if issubclass(type_, Categorizable):
-            return await cls.load_categorizable(directory, type_, **kwargs)
-        if issubclass(type_, Savable):
-            return await cls.load_savable(directory, type_)
-        return await cls.build_generic(type_, **kwargs)
+        try:
+            if issubclass(type_, Categorizable):
+                return await cls._load_categorizable(
+                    directory, type_, **kwargs
+                )
+            if issubclass(type_, Savable):
+                return await cls._load_savable(directory, type_)
+        except Exception:
+            pass
+
+        if default is not None:
+            return await default()
+
+        return await cls._build_generic(type_, **kwargs)
 
     async def load_saved_state(self, directory: Path) -> StateType:
         with open(directory / "state.json", "r") as f:
