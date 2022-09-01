@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Awaitable, Callable, Dict, Generic, TypeVar
+from typing import Any, Awaitable, Callable, Dict, Generic, Optional, TypeVar
 
 from humps import decamelize
 
@@ -18,7 +18,7 @@ class ParameterSetError(Exception):
     pass
 
 
-class Parameter(Categorizable, Generic[StateType, ParameterType], ABC):
+class BaseParameter(Categorizable, ABC, Generic[StateType, ParameterType]):
     async def get(self, state: StateType) -> ParameterType:
         try:
             return await self._get(state)
@@ -66,5 +66,30 @@ class Parameter(Categorizable, Generic[StateType, ParameterType], ABC):
 
     @classproperty
     @abstractmethod
+    def required(self) -> bool:
+        pass
+
+    @classproperty
+    @abstractmethod
     def schema(cls) -> Dict[str, Any]:
         pass
+
+
+class Parameter(
+    BaseParameter[StateType, ParameterType],
+    ABC,
+    Generic[StateType, ParameterType],
+):
+    @classproperty
+    def required(self) -> bool:
+        return True
+
+
+class OptionalParameter(
+    BaseParameter[StateType, Optional[ParameterType]],
+    ABC,
+    Generic[StateType, ParameterType],
+):
+    @classproperty
+    def required(self) -> bool:
+        return False
