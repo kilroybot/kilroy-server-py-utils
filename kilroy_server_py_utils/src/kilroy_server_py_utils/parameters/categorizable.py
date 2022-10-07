@@ -122,24 +122,37 @@ class CategorizableBasedParameter(
 
     @classproperty
     def schema(cls) -> Dict[str, Any]:
-        possible_properties = []
-        for category in cls.categorizable_base_class.all_categories:
+        options = []
+        for categorizable in cls.categorizable_base_class.all_categorizables:
             properties = {
-                "type": {"type": "string", "const": category},
+                "type": {
+                    "type": "string",
+                    "title": "Type",
+                    "const": categorizable.category,
+                    "default": categorizable.category,
+                    "readOnly": True,
+                },
             }
-            subclass = cls.categorizable_base_class.for_category(category)
+            subclass = cls.categorizable_base_class.for_category(
+                categorizable.category
+            )
             if issubclass(subclass, Configurable):
                 properties["config"] = {
                     "type": "object",
+                    "title": "Configuration",
                     "required": subclass.required_properties,
                     "properties": subclass.properties_schema,
                 }
-            possible_properties.append(properties)
+            options.append(
+                {
+                    "title": categorizable.pretty_category,
+                    "type": "object",
+                    "properties": properties,
+                }
+            )
         return {
-            "oneOf": [
-                {"type": "object", "properties": properties}
-                for properties in possible_properties
-            ],
+            "title": cls.pretty_name,
+            "oneOf": options,
         }
 
 
@@ -269,23 +282,35 @@ class CategorizableBasedOptionalParameter(
 
     @classproperty
     def schema(cls) -> Dict[str, Any]:
-        possible_properties = []
-        for category in cls.categorizable_base_class.all_categories:
+        options = []
+        for categorizable in cls.categorizable_base_class.all_categorizables:
             properties = {
-                "type": {"type": "string", "const": category},
+                "type": {
+                    "type": "string",
+                    "title": "Type",
+                    "const": categorizable.category,
+                    "default": categorizable.category,
+                    "readOnly": True,
+                },
             }
-            subclass = cls.categorizable_base_class.for_category(category)
+            subclass = cls.categorizable_base_class.for_category(
+                categorizable.category
+            )
             if issubclass(subclass, Configurable):
                 properties["config"] = {
                     "type": "object",
+                    "title": "Configuration",
                     "required": subclass.required_properties,
                     "properties": subclass.properties_schema,
                 }
-            possible_properties.append(properties)
+            options.append(
+                {
+                    "title": categorizable.pretty_category,
+                    "type": "object",
+                    "properties": properties,
+                }
+            )
         return {
-            "oneOf": [
-                {"type": "object", "properties": properties}
-                for properties in possible_properties
-            ]
-            + [{"type": "null"}],
+            "title": cls.pretty_name,
+            "oneOf": options + [{"type": "null", "title": "None"}],
         }

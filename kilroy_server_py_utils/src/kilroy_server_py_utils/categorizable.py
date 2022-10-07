@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
+from inspect import isabstract
 from typing import Set, TypeVar
+
+from humps import kebabize
 
 from kilroy_server_py_utils.utils import classproperty
 
@@ -22,16 +25,23 @@ class Categorizable(ABC):
     def category(cls) -> str:
         pass
 
+    @classproperty
+    def pretty_category(cls) -> str:
+        return kebabize(cls.category).replace("-", " ").title()
+
     @classmethod
     def for_category(cls: T, category: str) -> T:
-        for subclass in _get_all_subclasses(cls):
-            if subclass.category == category:
-                return subclass
-        raise ValueError(f'Subclass for category "{category}" not found.')
+        for categorizable in cls.all_categorizables:
+            if categorizable.category == category:
+                return categorizable
+        raise ValueError(f'Categorizable for category "{category}" not found.')
 
     @classproperty
-    def all_categories(cls) -> Set[str]:
-        return {clss.category for clss in _get_all_subclasses(cls)}
+    def all_categorizables(cls: T) -> Set[T]:
+        subclasses = _get_all_subclasses(cls)
+        return {
+            subclass for subclass in subclasses if not isabstract(subclass)
+        }
 
     def __eq__(self, other):
         return (

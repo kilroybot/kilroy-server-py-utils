@@ -202,9 +202,9 @@ class Configurable(Savable, Generic[StateType]):
 
     @classmethod
     async def _load_savable(
-        cls, directory: Path, savable: Type[SavableType]
+        cls, directory: Path, savable: Type[SavableType], **kwargs
     ) -> SavableType:
-        return await savable.from_saved(directory)
+        return await savable.from_saved(directory, **kwargs)
 
     @classmethod
     async def _load_categorizable(
@@ -236,7 +236,7 @@ class Configurable(Savable, Generic[StateType]):
                     directory, type_, **kwargs
                 )
             if issubclass(type_, Savable):
-                return await cls._load_savable(directory, type_)
+                return await cls._load_savable(directory, type_, **kwargs)
         except Exception:
             pass
 
@@ -265,7 +265,7 @@ class Configurable(Savable, Generic[StateType]):
 
     @classproperty
     def schema_name(cls) -> str:
-        return f"{cls.__name__} config schema"
+        return f"{cls.__name__} configuration schema"
 
     @classproperty
     def schema(cls) -> JSONSchema:
