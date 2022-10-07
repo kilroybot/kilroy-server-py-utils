@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Awaitable, Callable, Dict, Generic, Optional, TypeVar
 
-from humps import decamelize
+from humps import decamelize, kebabize
 
 from kilroy_server_py_utils.categorizable import Categorizable
 from kilroy_server_py_utils.utils import classproperty, noop, normalize
@@ -63,6 +63,14 @@ class BaseParameter(Categorizable, ABC, Generic[StateType, ParameterType]):
         class_name: str = cls.__name__
         name = class_name.removesuffix("Parameter").removeprefix("Parameter")
         return normalize(name) or "parameter"
+
+    @classproperty
+    def pretty_name(cls) -> str:
+        class_name: str = cls.__name__
+        name = class_name.removesuffix("Parameter").removeprefix("Parameter")
+        if not name:
+            return "Parameter"
+        return kebabize(name).replace("-", " ").title()
 
     @classproperty
     @abstractmethod
