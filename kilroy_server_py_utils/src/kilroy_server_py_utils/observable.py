@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from asyncio import Event, Lock, Queue
 from contextlib import asynccontextmanager
-from typing import AsyncIterable, Dict, Generic, Type, TypeVar
+from typing import AsyncIterable, Dict, Generic, Optional, Type, TypeVar
 from uuid import UUID, uuid4
 
 T = TypeVar("T")
@@ -38,6 +38,10 @@ class Observable(ReadableObservable[T], Generic[T], ABC):
     async def set(self, value: T) -> None:
         pass
 
+    @abstractmethod
+    async def cleanup(self) -> None:
+        pass
+
     @classmethod
     async def build(
         cls: Type[ObservableType], *args, **kwargs
@@ -53,38 +57,34 @@ class ObservableImpl(Observable[T], Generic[T]):
     _value_lock: Lock
     _queue_lock: Lock
     _ready_event: Event
-    _value: T
+    _value: Optional[T]
     _queues: Dict[UUID, Queue[T]]
 
     def __init__(
         self,
-        *args,
+        value: Optional[T],
         value_lock: Lock,
         queue_lock: Lock,
         ready_event: Event,
-        **kwargs,
     ) -> None:
         self._value_lock = value_lock
         self._queue_lock = queue_lock
         self._ready_event = ready_event
-        if len(args) > 0:
-            self._value = args[0]
-            self._ready_event.set()
-        elif "value" in kwargs:
-            self._value = kwargs["value"]
+        self._value = value
+        self._original_value = value
+        if value is not None:
             self._ready_event.set()
         self._queues = {}
 
     @classmethod
     async def build(
-        cls: Type[ObservableImplType], *args, **kwargs
+        cls: Type[ObservableImplType], value: Optional[T] = None
     ) -> ObservableImplType:
         return cls(
-            *args,
+            value=value,
             value_lock=Lock(),
             queue_lock=Lock(),
             ready_event=Event(),
-            **kwargs,
         )
 
     @asynccontextmanager
@@ -114,6 +114,17 @@ class ObservableImpl(Observable[T], Generic[T]):
             elif self._value != value:
                 self._value = value
                 await self._notify()
+
+    async def cleanup(self) -> None:
+        async with self._queue_lock:
+            for queue in self._queues.values():
+                await queue.put(None)
+            self._queues.clear()
+        if self._original_value is not None:
+            await self.set(self._original_value)
+        else:
+            self._value = None
+            self._ready_event.clear()
 
     async def get(self) -> T:
         async with self._value_lock:
