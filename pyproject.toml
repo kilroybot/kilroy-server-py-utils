@@ -3,7 +3,7 @@
 
 [tool.poetry]
 name = "kilroy-server-py-utils"
-version = "0.3.1"
+version = "0.3.2"
 description = "utilities for kilroy servers 🔧"
 readme = "kilroy_server_py_utils/README.md"
 authors = ["kilroy <kilroymail@pm.me>"]
