@@ -1,0 +1,7 @@
+name: kilroy-server-py-utils
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python==3.10.6
+  - pip==22.2.2
