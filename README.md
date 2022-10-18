@@ -4,8 +4,9 @@
 
 utilities for kilroy servers in Python 🔧
 
-[![Tests](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/test-multiplatform.yml/badge.svg)](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/test-multiplatform.yml)
-[![Docs](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/docs.yml/badge.svg)](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/docs.yml)
+[![Lint](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/lint.yaml/badge.svg)](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/lint.yaml)
+[![Tests](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/test-multiplatform.yaml/badge.svg)](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/test-multiplatform.yaml)
+[![Docs](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/docs.yaml/badge.svg)](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/docs.yaml)
 
 </div>
 
@@ -27,10 +28,10 @@ $ curl -sSL https://repo.anaconda.com/miniconda/Miniconda3-py39_4.10.3-Linux-x86
 $ bash miniconda.sh && exec bash
 (base) $ git clone https://github.com/kilroybot/kilroy-server-py-utils
 (base) $ cd kilroy_server_py_utils
-(base) $ conda env create -f environment.yml
+(base) $ conda env create -f environment.yaml
 (base) $ conda activate kilroy-server-py-utils
 (kilroy-server-py-utils) $ cd kilroy_server_py_utils
-(kilroy-server-py-utils) $ poetry install --extras dev
+(kilroy-server-py-utils) $ poetry install --sync
 ```
 
 ## Quickerstart
@@ -54,7 +55,7 @@ The first step is of course to install [`conda`](https://conda.io).
 To create an environment, run from project root:
 
 ```sh
-conda env create -f environment.yml
+conda env create -f environment.yaml
 ```
 
 And then activate it by:
@@ -66,11 +67,11 @@ conda activate kilroy-server-py-utils
 Creating the environment is performed only once, but you need to activate it
 every time you start a new shell.
 
-If the configuration file `environment.yml` changes, you can update the
+If the configuration file `environment.yaml` changes, you can update the
 environment by:
 
 ```sh
-conda env update -f environment.yml
+conda env update -f environment.yaml
 ```
 
 ## Package management
@@ -83,12 +84,11 @@ To install the package, you need to `cd`
 into `kilroy_server_py_utils` directory and run:
 
 ```sh
-poetry install --extras dev --remove-untracked
+poetry install --sync
 ```
 
-This will download and install all package dependencies (including optional
-development ones) and install the package in editable mode into the activated
-environment.
+This will download and install all package dependencies (including development
+ones) and install the package in editable mode into the activated environment.
 
 Editable mode means that you don't have to reinstall the package if you change
 something in the code. The changes are reflected automatically.
@@ -108,10 +108,10 @@ We are using [`pytest`](https://pytest.org) for tests. It's already installed
 in the environment, because it's a development-time dependency. To start first
 write the tests and put them in `kilroy_server_py_utils/tests`.
 
-To execute the tests, run from project root:
+To execute the tests, `cd` into `kilroy_server_py_utils` and run:
 
 ```sh
-pytest kilroy_server_py_utils
+poe test
 ```
 
 ## Building docs
@@ -124,14 +124,14 @@ creates a nice webpage for them.
 Docs should be placed in `kilroy_server_py_utils/docs/docs`. They
 are pretty straightforward to write.
 
-To build the docs,
-`cd` into `kilroy_server_py_utils/docs` and run:
+To build and serve the docs,
+`cd` into `kilroy_server_py_utils` and run:
 
 ```sh
-mkdocs build
+poe docs
 ```
 
-It will generate `site` directory with the webpage source.
+It will generate `site` directory with the webpage source and serve it.
 
 ## Adding new dependencies
 
@@ -144,7 +144,7 @@ After that update the installation by running
 from `kilroy_server_py_utils` directory:
 
 ```sh
-poetry update
+poe update
 ```
 
 This will install anything new in your environment and update the `poetry.lock`
@@ -172,8 +172,8 @@ it means the commit broke something (or workflows themselves are broken).
 
 Every time you merge a pull request into main, a draft release is automatically
 updated, adding the pull request to changelog. Changes can be categorized by
-using labels. You can configure that in `.github/release-drafter.yml` file.
+using labels. You can configure that in `.github/release-drafter.yaml` file.
 
-Every time you publish a release the package is uploaded to PyPI
-with version taken from release tag
+Every time you publish a release the package is uploaded to PyPI 
+with version taken from release tag 
 (you should store your PyPI token in `PYPI_TOKEN` secret).

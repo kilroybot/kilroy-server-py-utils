@@ -4,8 +4,9 @@
 
 utilities for kilroy servers in Python 🔧
 
-[![Tests](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/test-multiplatform.yml/badge.svg)](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/test-multiplatform.yml)
-[![Docs](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/docs.yml/badge.svg)](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/docs.yml)
+[![Lint](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/lint.yaml/badge.svg)](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/lint.yaml)
+[![Tests](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/test-multiplatform.yaml/badge.svg)](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/test-multiplatform.yaml)
+[![Docs](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/docs.yaml/badge.svg)](https://github.com/kilroybot/kilroy-server-py-utils/actions/workflows/docs.yaml)
 
 </div>
 
