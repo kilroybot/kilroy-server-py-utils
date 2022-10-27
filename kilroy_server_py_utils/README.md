@@ -12,7 +12,10 @@ utilities for kilroy servers in Python 🔧
 
 ---
 
-TODO
+## Overview
+
+This package contains code useful to implement **kilroy** servers in Python.
+Mostly it's just a bunch of utilities and base classes.
 
 ## Installing
 
