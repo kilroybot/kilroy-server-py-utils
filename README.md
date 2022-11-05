@@ -14,9 +14,9 @@ utilities for kilroy servers in Python 🔧
 
 This `README` provides info about the development process.
 
-For more info about the package itself
-see `kilroy_server_py_utils/README.md`
-or [docs](https://kilroybot.github.io/kilroy-server-py-utils).
+For more info about the package itself see
+[package `README`](kilroy_server_py_utils/README.md) or
+[docs](https://kilroybot.github.io/kilroy-server-py-utils).
 
 ## Quickstart (on Ubuntu)
 
