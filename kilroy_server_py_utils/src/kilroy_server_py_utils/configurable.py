@@ -167,6 +167,7 @@ class Configurable(Savable, Generic[StateType]):
             return await cls._build_configurable(type_, **kwargs)
         return type_(**kwargs)
 
+    # noinspection PyMethodParameters
     @classproperty
     def _state_class(cls) -> Type[StateType]:
         return get_generic_args(cls, Configurable)[0]
@@ -255,18 +256,21 @@ class Configurable(Savable, Generic[StateType]):
             state = await self._load_saved_state(directory)
             await setter(state)
 
+    # noinspection PyMethodParameters
     @classproperty
-    def parameters(cls) -> Set[Parameter]:
+    def parameters(cls) -> Set[Type[Parameter]]:
         return {
-            inner_cls()
+            inner_cls
             for inner_cls in cls.__dict__.values()
             if inspect.isclass(inner_cls) and issubclass(inner_cls, Parameter)
         }
 
+    # noinspection PyMethodParameters
     @classproperty
     def schema_name(cls) -> str:
         return f"{cls.__name__} configuration schema"
 
+    # noinspection PyMethodParameters
     @classproperty
     def schema(cls) -> JSONSchema:
         # noinspection PyArgumentList
@@ -277,6 +281,7 @@ class Configurable(Savable, Generic[StateType]):
             properties=cls.properties_schema,
         )
 
+    # noinspection PyMethodParameters
     @classproperty
     def required_properties(cls) -> List[str]:
         return [
@@ -285,6 +290,7 @@ class Configurable(Savable, Generic[StateType]):
             if parameter.required
         ]
 
+    # noinspection PyMethodParameters
     @classproperty
     def properties_schema(cls) -> Dict[str, Any]:
         return {

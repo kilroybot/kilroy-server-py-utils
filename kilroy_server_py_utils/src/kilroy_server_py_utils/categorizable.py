@@ -20,11 +20,13 @@ def _get_all_subclasses(cls: T) -> Set[T]:
 
 
 class Categorizable(ABC):
+    # noinspection PyMethodParameters
     @classproperty
     @abstractmethod
     def category(cls) -> str:
         pass
 
+    # noinspection PyMethodParameters
     @classproperty
     def pretty_category(cls) -> str:
         return kebabize(cls.category).replace("-", " ").title()
@@ -36,6 +38,7 @@ class Categorizable(ABC):
                 return categorizable
         raise ValueError(f'Categorizable for category "{category}" not found.')
 
+    # noinspection PyMethodParameters
     @classproperty
     def all_categorizables(cls: T) -> Set[T]:
         subclasses = _get_all_subclasses(cls)
