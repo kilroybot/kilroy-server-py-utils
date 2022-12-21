@@ -31,15 +31,17 @@ class NestedParameter(
     ABC,
     Generic[StateType, ConfigurableType],
 ):
-    async def _get(self, state: StateType) -> Dict[str, Any]:
-        configurable = await self._get_configurable(state)
+    @classmethod
+    async def _get(cls, state: StateType) -> Dict[str, Any]:
+        configurable = await cls._get_configurable(state)
         return await configurable.config.json.fetch()
 
+    @classmethod
     async def _set(
-        self, state: StateType, value: Dict[str, Any]
+        cls, state: StateType, value: Dict[str, Any]
     ) -> Callable[[], Awaitable]:
-        configurable = await self._get_configurable(state)
-        undo = await self._create_undo(configurable)
+        configurable = await cls._get_configurable(state)
+        undo = await cls._create_undo(configurable)
         await configurable.config.set(value)
         return undo
 
@@ -54,13 +56,16 @@ class NestedParameter(
 
         return undo
 
-    async def _get_configurable(self, state: StateType) -> ConfigurableType:
-        return getattr(state, decamelize(self.name))
+    @classmethod
+    async def _get_configurable(cls, state: StateType) -> ConfigurableType:
+        return getattr(state, decamelize(cls.name))
 
+    # noinspection PyMethodParameters
     @classproperty
     def configurable_class(cls) -> Type[ConfigurableType]:
         return get_generic_args(cls, NestedParameter)[1]
 
+    # noinspection PyMethodParameters
     @classproperty
     def schema(cls) -> Dict[str, Any]:
         return {
@@ -76,38 +81,41 @@ class NestedOptionalParameter(
     ABC,
     Generic[StateType, ConfigurableType],
 ):
-    async def _get(self, state: StateType) -> Optional[Dict[str, Any]]:
-        configurable = await self._get_configurable(state)
+    @classmethod
+    async def _get(cls, state: StateType) -> Optional[Dict[str, Any]]:
+        configurable = await cls._get_configurable(state)
         if configurable is None:
             return None
         return await configurable.config.json.fetch()
 
+    @classmethod
     async def _set(
-        self, state: StateType, value: Optional[Dict[str, Any]]
+        cls, state: StateType, value: Optional[Dict[str, Any]]
     ) -> Callable[[], Awaitable]:
-        configurable = await self._get_configurable(state)
+        configurable = await cls._get_configurable(state)
 
         if value is None:
-            undo = await self._create_undo(state, configurable, None)
-            await self._set_configurable(state, None)
+            undo = await cls._create_undo(state, configurable, None)
+            await cls._set_configurable(state, None)
             if configurable is not None:
                 await configurable.cleanup()
             return undo
 
         if configurable is None:
-            params = await self._get_params(state)
-            new = await self.configurable_class.create(**params)
+            params = await cls._get_params(state)
+            new = await cls.configurable_class.create(**params)
             await new.config.set(value)
-            undo = await self._create_undo(state, None, new)
-            await self._set_configurable(state, new)
+            undo = await cls._create_undo(state, None, new)
+            await cls._set_configurable(state, new)
             return undo
 
-        undo = await self._create_undo(state, configurable, configurable)
+        undo = await cls._create_undo(state, configurable, configurable)
         await configurable.config.set(value)
         return undo
 
+    @classmethod
     async def _create_undo(
-        self,
+        cls,
         state: StateType,
         old: Optional[Configurable],
         new: Optional[Configurable],
@@ -126,42 +134,47 @@ class NestedOptionalParameter(
         if old is None:
 
             async def undo():
-                await self._set_configurable(state, None)
+                await cls._set_configurable(state, None)
                 await new.cleanup()
 
             return undo
 
         tempdir = SelfDeletingDirectory()
         await old.save(tempdir.path)
-        params = await self._get_params(state)
+        params = await cls._get_params(state)
 
         async def undo():
-            loaded = await self.configurable_class.from_saved(
+            loaded = await cls.configurable_class.from_saved(
                 tempdir.path, **params
             )
-            await self._set_configurable(state, loaded)
+            await cls._set_configurable(state, loaded)
             if new is not None:
                 await new.cleanup()
 
         return undo
 
+    @classmethod
     async def _get_configurable(
-        self, state: StateType
+        cls, state: StateType
     ) -> Optional[ConfigurableType]:
-        return getattr(state, decamelize(self.name))
+        return getattr(state, decamelize(cls.name))
 
+    @classmethod
     async def _set_configurable(
-        self, state: StateType, value: Optional[ConfigurableType]
+        cls, state: StateType, value: Optional[ConfigurableType]
     ) -> None:
-        setattr(state, decamelize(self.name), value)
+        setattr(state, decamelize(cls.name), value)
 
-    async def _get_params(self, state: StateType) -> Dict[str, Any]:
-        return getattr(state, f"{decamelize(self.name)}_params")
+    @classmethod
+    async def _get_params(cls, state: StateType) -> Dict[str, Any]:
+        return getattr(state, f"{decamelize(cls.name)}_params")
 
+    # noinspection PyMethodParameters
     @classproperty
     def configurable_class(cls) -> Type[ConfigurableType]:
         return get_generic_args(cls, NestedOptionalParameter)[1]
 
+    # noinspection PyMethodParameters
     @classproperty
     def schema(cls) -> Dict[str, Any]:
         return {

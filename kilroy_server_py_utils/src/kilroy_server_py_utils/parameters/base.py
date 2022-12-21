@@ -1,5 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import Any, Awaitable, Callable, Dict, Generic, Optional, TypeVar
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    Optional,
+    TypeVar,
+)
 
 from humps import decamelize, kebabize
 
@@ -19,33 +27,37 @@ class ParameterSetError(Exception):
 
 
 class BaseParameter(Categorizable, ABC, Generic[StateType, ParameterType]):
-    async def get(self, state: StateType) -> ParameterType:
+    @classmethod
+    async def get(cls, state: StateType) -> ParameterType:
         try:
-            return await self._get(state)
+            return await cls._get(state)
         except Exception as e:
             raise ParameterGetError() from e
 
+    @classmethod
     async def set(
-        self,
+        cls,
         state: StateType,
         value: ParameterType,
     ) -> Callable[[], Awaitable]:
-        if (await self.get(state)) == value:
+        if (await cls.get(state)) == value:
             return noop
         try:
-            return await self._set(state, value)
+            return await cls._set(state, value)
         except Exception as e:
             raise ParameterSetError() from e
 
-    async def _get(self, state: StateType) -> ParameterType:
-        return getattr(state, decamelize(self.name))
+    @classmethod
+    async def _get(cls, state: StateType) -> ParameterType:
+        return getattr(state, decamelize(cls.name))
 
+    @classmethod
     async def _set(
-        self,
+        cls,
         state: StateType,
         value: ParameterType,
     ) -> Callable[[], Awaitable]:
-        name = decamelize(self.name)
+        name = decamelize(cls.name)
         original_value = getattr(state, name)
 
         async def undo():
@@ -54,16 +66,19 @@ class BaseParameter(Categorizable, ABC, Generic[StateType, ParameterType]):
         setattr(state, name, value)
         return undo
 
+    # noinspection PyMethodParameters
     @classproperty
     def category(cls) -> str:
         return cls.name
 
+    # noinspection PyMethodParameters
     @classproperty
     def name(cls) -> str:
         class_name: str = cls.__name__
         name = class_name.removesuffix("Parameter").removeprefix("Parameter")
         return normalize(name) or "parameter"
 
+    # noinspection PyMethodParameters
     @classproperty
     def pretty_name(cls) -> str:
         class_name: str = cls.__name__
@@ -72,11 +87,13 @@ class BaseParameter(Categorizable, ABC, Generic[StateType, ParameterType]):
             return "Parameter"
         return kebabize(name).replace("-", " ").title()
 
+    # noinspection PyMethodParameters
     @classproperty
     @abstractmethod
     def required(self) -> bool:
         pass
 
+    # noinspection PyMethodParameters
     @classproperty
     @abstractmethod
     def schema(cls) -> Dict[str, Any]:
@@ -88,6 +105,7 @@ class Parameter(
     ABC,
     Generic[StateType, ParameterType],
 ):
+    # noinspection PyMethodParameters
     @classproperty
     def required(self) -> bool:
         return True
@@ -98,6 +116,7 @@ class OptionalParameter(
     ABC,
     Generic[StateType, ParameterType],
 ):
+    # noinspection PyMethodParameters
     @classproperty
     def required(self) -> bool:
         return False

@@ -31,8 +31,9 @@ class CategorizableBasedParameter(
     ABC,
     Generic[StateType, CategorizableType],
 ):
-    async def _get(self, state: StateType) -> Dict[str, Any]:
-        categorizable = await self._get_categorizable(state)
+    @classmethod
+    async def _get(cls, state: StateType) -> Dict[str, Any]:
+        categorizable = await cls._get_categorizable(state)
         category = categorizable.category
         if isinstance(categorizable, Configurable):
             return {
@@ -41,33 +42,35 @@ class CategorizableBasedParameter(
             }
         return {"type": category}
 
+    @classmethod
     async def _set(
-        self, state: StateType, value: Dict[str, Any]
+        cls, state: StateType, value: Dict[str, Any]
     ) -> Callable[[], Awaitable]:
-        current = await self._get_categorizable(state)
+        current = await cls._get_categorizable(state)
         new_category = value.get("type", current.category)
 
         if new_category == current.category:
-            undo = await self._create_undo(state, current, current)
+            undo = await cls._create_undo(state, current, current)
             await current.config.set(value.get("config", {}))
             return undo
 
-        params = await self._get_params(state, new_category)
-        subclass = self.categorizable_base_class.for_category(new_category)
+        params = await cls._get_params(state, new_category)
+        subclass = cls.categorizable_base_class.for_category(new_category)
         if issubclass(subclass, Configurable):
             instance = await subclass.create(**params)
             await instance.config.set(value.get("config", {}))
         else:
             instance = subclass(**params)
 
-        undo = await self._create_undo(state, current, instance)
-        await self._set_categorizable(state, instance)
+        undo = await cls._create_undo(state, current, instance)
+        await cls._set_categorizable(state, instance)
         if isinstance(current, Configurable):
             await current.cleanup()
         return undo
 
+    @classmethod
     async def _create_undo(
-        self, state: StateType, old: Categorizable, new: Categorizable
+        cls, state: StateType, old: Categorizable, new: Categorizable
     ) -> Callable[[], Awaitable]:
         if old is new:
             if not isinstance(old, Configurable):
@@ -84,42 +87,46 @@ class CategorizableBasedParameter(
         if isinstance(old, Configurable):
             tempdir = SelfDeletingDirectory()
             await old.save(tempdir.path)
-            # noinspection PyUnresolvedReferences
-            params = await self._get_params(state, old.category)
 
             async def undo():
-                loaded = await old.from_saved(tempdir.path, **params)
-                await self._set_categorizable(state, loaded)
+                # noinspection PyUnresolvedReferences
+                await old.load_saved(tempdir.path)
+                await cls._set_categorizable(state, old)
                 if isinstance(new, Configurable):
                     await new.cleanup()
 
             return undo
 
         async def undo():
-            await self._set_categorizable(state, old)
+            await cls._set_categorizable(state, old)
             if isinstance(new, Configurable):
                 await new.cleanup()
 
         return undo
 
-    async def _get_categorizable(self, state: StateType) -> CategorizableType:
-        return getattr(state, decamelize(self.name))
+    @classmethod
+    async def _get_categorizable(cls, state: StateType) -> CategorizableType:
+        return getattr(state, decamelize(cls.name))
 
+    @classmethod
     async def _set_categorizable(
-        self, state: StateType, value: CategorizableType
+        cls, state: StateType, value: CategorizableType
     ) -> None:
-        setattr(state, decamelize(self.name), value)
+        setattr(state, decamelize(cls.name), value)
 
+    @classmethod
     async def _get_params(
-        self, state: StateType, category: str
+        cls, state: StateType, category: str
     ) -> Dict[str, Any]:
-        all_params = getattr(state, f"{decamelize(self.name)}s_params")
+        all_params = getattr(state, f"{decamelize(cls.name)}s_params")
         return all_params.get(category, {})
 
+    # noinspection PyMethodParameters
     @classproperty
     def categorizable_base_class(cls) -> Type[CategorizableType]:
         return get_generic_args(cls, CategorizableBasedParameter)[1]
 
+    # noinspection PyMethodParameters
     @classproperty
     def schema(cls) -> Dict[str, Any]:
         options = []
@@ -158,12 +165,13 @@ class CategorizableBasedParameter(
 
 # noinspection DuplicatedCode
 class CategorizableBasedOptionalParameter(
-    Parameter[StateType, Optional[Dict[str, Any]]],
+    OptionalParameter[StateType, Dict[str, Any]],
     ABC,
     Generic[StateType, CategorizableType],
 ):
-    async def _get(self, state: StateType) -> Optional[Dict[str, Any]]:
-        categorizable = await self._get_categorizable(state)
+    @classmethod
+    async def _get(cls, state: StateType) -> Optional[Dict[str, Any]]:
+        categorizable = await cls._get_categorizable(state)
         if categorizable is None:
             return None
         category = categorizable.category
@@ -174,14 +182,15 @@ class CategorizableBasedOptionalParameter(
             }
         return {"type": category}
 
+    @classmethod
     async def _set(
-        self, state: StateType, value: Optional[Dict[str, Any]]
+        cls, state: StateType, value: Optional[Dict[str, Any]]
     ) -> Callable[[], Awaitable]:
-        current = await self._get_categorizable(state)
+        current = await cls._get_categorizable(state)
 
         if value is None:
-            undo = await self._create_undo(state, current, None)
-            await self._set_categorizable(state, None)
+            undo = await cls._create_undo(state, current, None)
+            await cls._set_categorizable(state, None)
             if isinstance(current, Configurable):
                 await current.cleanup()
             return undo
@@ -189,28 +198,29 @@ class CategorizableBasedOptionalParameter(
         if current is not None:
             new_category = value.get("type", current.category)
             if new_category == current.category:
-                undo = await self._create_undo(state, current, current)
+                undo = await cls._create_undo(state, current, current)
                 await current.config.set(value.get("config", {}))
                 return undo
         else:
             new_category = value["type"]
 
-        params = await self._get_params(state, new_category)
-        subclass = self.categorizable_base_class.for_category(new_category)
+        params = await cls._get_params(state, new_category)
+        subclass = cls.categorizable_base_class.for_category(new_category)
         if issubclass(subclass, Configurable):
             instance = await subclass.create(**params)
             await instance.config.set(value.get("config", {}))
         else:
             instance = subclass(**params)
 
-        undo = await self._create_undo(state, current, instance)
-        await self._set_categorizable(state, instance)
+        undo = await cls._create_undo(state, current, instance)
+        await cls._set_categorizable(state, instance)
         if isinstance(current, Configurable):
             await current.cleanup()
         return undo
 
+    @classmethod
     async def _create_undo(
-        self,
+        cls,
         state: StateType,
         old: Optional[Categorizable],
         new: Optional[Categorizable],
@@ -233,7 +243,7 @@ class CategorizableBasedOptionalParameter(
         if old is None:
 
             async def undo():
-                await self._set_categorizable(state, None)
+                await cls._set_categorizable(state, None)
                 if isinstance(new, Configurable):
                     await new.cleanup()
 
@@ -242,40 +252,43 @@ class CategorizableBasedOptionalParameter(
         if isinstance(old, Configurable):
             tempdir = SelfDeletingDirectory()
             await old.save(tempdir.path)
-            # noinspection PyUnresolvedReferences
-            params = await self._get_params(state, old.category)
 
             async def undo():
-                loaded = await old.from_saved(tempdir.path, **params)
-                await self._set_categorizable(state, loaded)
+                # noinspection PyUnresolvedReferences
+                await old.load_saved(tempdir.path)
+                await cls._set_categorizable(state, old)
                 if isinstance(new, Configurable):
                     await new.cleanup()
 
             return undo
 
         async def undo():
-            await self._set_categorizable(state, old)
+            await cls._set_categorizable(state, old)
             if isinstance(new, Configurable):
                 await new.cleanup()
 
         return undo
 
+    @classmethod
     async def _get_categorizable(
-        self, state: StateType
+        cls, state: StateType
     ) -> Optional[CategorizableType]:
-        return getattr(state, decamelize(self.name))
+        return getattr(state, decamelize(cls.name))
 
+    @classmethod
     async def _set_categorizable(
-        self, state: StateType, value: Optional[CategorizableType]
+        cls, state: StateType, value: Optional[CategorizableType]
     ) -> None:
-        setattr(state, decamelize(self.name), value)
+        setattr(state, decamelize(cls.name), value)
 
+    @classmethod
     async def _get_params(
-        self, state: StateType, category: str
+        cls, state: StateType, category: str
     ) -> Dict[str, Any]:
-        all_params = getattr(state, f"{decamelize(self.name)}s_params")
+        all_params = getattr(state, f"{decamelize(cls.name)}s_params")
         return all_params.get(category, {})
 
+    # noinspection PyMethodParameters
     @classproperty
     def categorizable_base_class(cls) -> Type[CategorizableType]:
         return get_generic_args(cls, CategorizableBasedOptionalParameter)[1]
