@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import (
     Any,
     Awaitable,
@@ -14,7 +14,7 @@ from humps import decamelize
 
 from kilroy_server_py_utils.categorizable import Categorizable
 from kilroy_server_py_utils.configurable import Configurable
-from kilroy_server_py_utils.parameters.base import Parameter
+from kilroy_server_py_utils.parameters.base import Parameter, OptionalParameter
 from kilroy_server_py_utils.utils import (
     SelfDeletingDirectory,
     classproperty,
@@ -128,6 +128,38 @@ class CategorizableBasedParameter(
 
     # noinspection PyMethodParameters
     @classproperty
+    def default(cls) -> Dict[str, Any]:
+        categorizable = cls.default_categorizable
+        category = categorizable.category
+
+        if not issubclass(categorizable, Configurable):
+            return {"type": category}
+
+        config = cls.default_config
+
+        if config is None:
+            return {"type": category}
+
+        return {"type": category, "config": config}
+
+    # noinspection PyMethodParameters
+    @classproperty
+    @abstractmethod
+    def default_categorizable(cls) -> Type[CategorizableType]:
+        pass
+
+    # noinspection PyMethodParameters
+    @classproperty
+    def default_config(cls) -> Optional[Dict[str, Any]]:
+        ctg = cls.default_categorizable
+
+        if ctg is None or not issubclass(ctg, Configurable):
+            return None
+
+        return {}
+
+    # noinspection PyMethodParameters
+    @classproperty
     def schema(cls) -> Dict[str, Any]:
         options = []
         for categorizable in cls.categorizable_base_class.all_categorizables:
@@ -159,6 +191,7 @@ class CategorizableBasedParameter(
             )
         return {
             "title": cls.pretty_name,
+            "default": cls.default,
             "oneOf": options,
         }
 
@@ -293,9 +326,45 @@ class CategorizableBasedOptionalParameter(
     def categorizable_base_class(cls) -> Type[CategorizableType]:
         return get_generic_args(cls, CategorizableBasedOptionalParameter)[1]
 
+    # noinspection PyMethodParameters
+    @classproperty
+    def default(cls) -> Optional[Dict[str, Any]]:
+        categorizable = cls.default_categorizable
+
+        if categorizable is None:
+            return None
+
+        category = categorizable.category
+
+        if not issubclass(categorizable, Configurable):
+            return {"type": category}
+
+        config = cls.default_config
+
+        if config is None:
+            return {"type": category}
+
+        return {"type": category, "config": config}
+
+    # noinspection PyMethodParameters
+    @classproperty
+    def default_categorizable(cls) -> Optional[Type[CategorizableType]]:
+        return None
+
+    # noinspection PyMethodParameters
+    @classproperty
+    def default_config(cls) -> Optional[Dict[str, Any]]:
+        ctg = cls.default_categorizable
+
+        if ctg is None or not issubclass(ctg, Configurable):
+            return None
+
+        return {}
+
+    # noinspection PyMethodParameters
     @classproperty
     def schema(cls) -> Dict[str, Any]:
-        options = []
+        options: List[Dict[str, Any]] = []
         for categorizable in cls.categorizable_base_class.all_categorizables:
             properties = {
                 "type": {
@@ -323,7 +392,9 @@ class CategorizableBasedOptionalParameter(
                     "properties": properties,
                 }
             )
+
         return {
             "title": cls.pretty_name,
-            "oneOf": options + [{"type": "null", "title": "None"}],
+            "default": cls.default,
+            "oneOf": options + [{"title": "None", "type": "null"}],
         }
