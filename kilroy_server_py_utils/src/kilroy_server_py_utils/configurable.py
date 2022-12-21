@@ -293,13 +293,13 @@ class Configurable(Savable, Generic[StateType]):
     # noinspection PyMethodParameters
     @classproperty
     def schema(cls) -> JSONSchema:
-        # noinspection PyArgumentList
-        return JSONSchema(
-            title=cls.schema_name,
-            type="object",
-            required=cls.required_properties,
-            properties=cls.properties_schema,
-        )
+        schema = {
+            "title": cls.schema_name,
+            "type": "object",
+            "required": cls.required_properties,
+            "properties": cls.properties_schema,
+        }
+        return JSONSchema(**schema)
 
     # noinspection PyMethodParameters
     @classproperty
