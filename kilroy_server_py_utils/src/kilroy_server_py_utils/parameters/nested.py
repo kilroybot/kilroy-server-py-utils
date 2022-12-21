@@ -71,6 +71,7 @@ class NestedParameter(
         return {
             "type": "object",
             "title": cls.pretty_name,
+            "default": {},
             "required": cls.configurable_class.required_properties,
             "properties": cls.configurable_class.properties_schema,
         }
@@ -178,8 +179,15 @@ class NestedOptionalParameter(
     @classproperty
     def schema(cls) -> Dict[str, Any]:
         return {
-            "type": ["object", "null"],
             "title": cls.pretty_name,
-            "required": cls.configurable_class.required_properties,
-            "properties": cls.configurable_class.properties_schema,
+            "default": None,
+            "oneOf": [
+                {
+                    "type": "object",
+                    "title": "Yes",
+                    "required": cls.configurable_class.required_properties,
+                    "properties": cls.configurable_class.properties_schema,
+                },
+                {"type": "null", "title": "No"},
+            ],
         }
