@@ -1,5 +1,6 @@
 import inspect
 import json
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import (
@@ -247,6 +248,7 @@ class Configurable(Savable, Generic[StateType]):
         directory: Path,
         type_: Type[T],
         default: Optional[Callable[[], Awaitable[T]]] = None,
+        logger: Optional[logging.Logger] = None,
         **kwargs,
     ) -> T:
         try:
@@ -256,8 +258,9 @@ class Configurable(Savable, Generic[StateType]):
                 )
             if issubclass(type_, Savable):
                 return await cls._load_savable(directory, type_, **kwargs)
-        except Exception:
-            pass
+        except Exception as e:
+            if logger is not None:
+                logger.warning(f"Failed to load {type_}.", exc_info=e)
 
         if default is not None:
             return await default()
