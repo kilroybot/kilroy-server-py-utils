@@ -23,6 +23,8 @@ from kilroy_server_py_utils.parameters.base import (
 from kilroy_server_py_utils.parameters.categorizable import (
     CategorizableBasedOptionalParameter,
     CategorizableBasedParameter,
+    MultipleCategorizableBasedParameter,
+    MultipleCategorizableBasedOptionalParameter,
 )
 from kilroy_server_py_utils.parameters.nested import (
     NestedOptionalParameter,
