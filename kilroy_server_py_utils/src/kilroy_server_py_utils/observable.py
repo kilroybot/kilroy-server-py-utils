@@ -98,7 +98,7 @@ class ObservableImpl(Observable[T], Generic[T]):
         yield queue
 
         async with self._queue_lock:
-            self._queues.pop(queue_id)
+            self._queues.pop(queue_id, None)
 
     async def _notify(self) -> None:
         async with self._queue_lock:
