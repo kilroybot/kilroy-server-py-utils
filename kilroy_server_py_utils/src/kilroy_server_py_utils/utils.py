@@ -15,8 +15,11 @@ from typing import (
     Union,
     _GenericAlias,
     get_args,
+    Iterable,
+    AsyncIterable,
 )
 
+from aiostream.stream import iterate, chain, take, preserve
 from humps import camelize, kebabize
 
 T = TypeVar("T")
@@ -93,3 +96,25 @@ async def background(
 def normalize(name: str) -> str:
     name = name.lower() if name.isupper() else name
     return camelize(kebabize(name))
+
+
+async def batchify(
+    iterable: Union[Iterable[T], AsyncIterable[T]],
+    n: Optional[int],
+) -> AsyncIterable[AsyncIterable[T]]:
+    xs = iterate(iterable)
+
+    async with xs.stream() as streamer:
+        if n is None:
+            yield streamer
+            return
+
+        async for first in streamer:
+
+            async def afirst():
+                yield first
+
+            batch = chain(afirst(), take(preserve(streamer), n - 1))
+
+            async with batch.stream() as batch_streamer:
+                yield batch_streamer
