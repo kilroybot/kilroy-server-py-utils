@@ -183,10 +183,28 @@ class Configurable(Savable, Generic[StateType]):
     async def cleanup(self) -> None:
         pass
 
+    @staticmethod
+    async def _save_state_dict(
+        state_dict: Dict[str, Any], directory: Path, name: str = "state.json"
+    ) -> None:
+        directory.mkdir(parents=True, exist_ok=True)
+        with open(directory / name, "w") as f:
+            json.dump(state_dict, f)
+
+    @staticmethod
+    async def _load_state_dict(
+        directory: Path, name: str = "state.json"
+    ) -> Dict[str, Any]:
+        try:
+            with open(directory / name, "r") as f:
+                return json.load(f)
+        except OSError:
+            return {}
+
     @classmethod
     async def _save_state(cls, state: StateType, directory: Path) -> None:
-        with open(directory / "state.json", "w") as f:
-            json.dump(vars(state), f)
+        state_dict = vars(state)
+        await cls._save_state_dict(state_dict, directory)
 
     async def save(self, directory: Path) -> None:
         directory.mkdir(parents=True, exist_ok=True)
@@ -247,8 +265,7 @@ class Configurable(Savable, Generic[StateType]):
         return await cls._build_generic(type_, **kwargs)
 
     async def _load_saved_state(self, directory: Path) -> StateType:
-        with open(directory / "state.json", "r") as f:
-            state_dict = json.load(f)
+        state_dict = await self._load_state_dict(directory)
         return self._state_class(**state_dict)
 
     async def load_saved(self, directory: Path) -> None:
